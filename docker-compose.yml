@@ -1,0 +1,39 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: payscale
+      POSTGRES_USER: payscale
+      POSTGRES_PASSWORD: local-dev-only
+    command: ["postgres", "-c", "max_connections=200", "-c", "synchronous_commit=on"]
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U payscale -d payscale"]
+      interval: 3s
+      timeout: 2s
+      retries: 20
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/db/schema.sql:/docker-entrypoint-initdb.d/001-schema.sql:ro
+  redis:
+    image: redis:7
+    command: ["redis-server", "--maxmemory", "512mb", "--maxmemory-policy", "volatile-lfu", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 2s
+      retries: 20
+  redpanda:
+    image: redpandadata/redpanda:latest
+    command: ["redpanda", "start", "--overprovisioned", "--smp", "1", "--memory", "1G", "--reserve-memory", "0M", "--node-id", "0", "--check=false", "--kafka-addr", "internal://0.0.0.0:19092,external://0.0.0.0:9092", "--advertise-kafka-addr", "internal://redpanda:19092,external://localhost:9092"]
+    ports:
+      - "9092:9092"
+      - "19092:19092"
+    volumes:
+      - redpanda_data:/var/lib/redpanda/data
+volumes:
+  postgres_data:
+  redpanda_data:

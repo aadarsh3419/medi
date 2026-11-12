@@ -1,0 +1,5 @@
+asyncpg>=0.29,<1
+fastapi>=0.110,<1
+pydantic>=2.6,<3
+redis>=5,<7
+uvicorn[standard]>=0.27,<1
